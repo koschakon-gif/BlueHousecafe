@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>เทรลริมคลอง บ้านนาเดิม · Blue House Café</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&family=Prompt:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--h:calc(54px + env(safe-area-inset-top,0px));--ink:#111;--mute:#7a7a7a;--line:#e4e4e4;--soft:#f6f6f6;--blue:#1d5fd1}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font-family:'Jost','Prompt',system-ui,sans-serif;font-weight:300;color:var(--ink);letter-spacing:.02em}
+#map{position:fixed;inset:var(--h) 0 0 0}
+.glass{background:rgba(255,255,255,.95);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line)}
+.bar{position:fixed;top:0;left:0;right:0;z-index:20;height:var(--h);padding:env(safe-area-inset-top,0px) 20px 0;display:flex;align-items:center;justify-content:space-between;border-width:0 0 1px}
+.bar b{font-weight:500;letter-spacing:.28em;font-size:13px}.bar a{color:var(--ink);text-decoration:none;font-size:13px}
+.note{position:fixed;inset:var(--h) 0 0 0;display:none;place-items:center;text-align:center;background:var(--soft);color:var(--mute);z-index:1;padding:20px;line-height:1.8}
+.note.show{display:grid}.note a{color:var(--ink)}
+.sheet{position:fixed;left:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));width:min(380px,calc(100% - 40px));max-height:55vh;overflow:auto;z-index:5;padding:22px}
+.sheet small{letter-spacing:.24em;color:var(--mute);font-size:11px}
+.sheet h1{margin:6px 0 4px;font-size:22px;font-weight:400;letter-spacing:.08em}
+.meta{display:flex;gap:16px;font-size:13px;padding:10px 0;margin:8px 0 12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.btns{display:flex;gap:8px;margin-bottom:12px}
+.btn{flex:1;border:1px solid var(--ink);background:var(--ink);color:#fff;padding:10px 6px;font:inherit;font-size:12px;letter-spacing:.18em;cursor:pointer;text-transform:uppercase}
+.btn.alt{background:#fff;color:var(--ink)}.btn:disabled{opacity:.35;cursor:default}
+.stops button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;border:0;border-top:1px solid var(--line);background:#fff;padding:10px 4px;font:inherit;font-size:14px;cursor:pointer}
+.stops button:hover{background:var(--soft)}.stops i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;font-size:12px;display:grid;place-items:center;flex:none}
+.stops small{margin-left:auto;letter-spacing:0;font-size:12px}
+.empty{color:var(--mute);font-size:13px;line-height:1.7}
+.tools{position:fixed;top:calc(var(--h) + 12px);left:20px;right:20px;z-index:6;padding:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px}
+.tools button,.tools select{border:1px solid var(--line);background:#fff;padding:7px 12px;font:inherit;font-size:12px;cursor:pointer;color:var(--ink)}
+.tools button.on{background:var(--ink);color:#fff;border-color:var(--ink)}.tools label{display:flex;gap:4px;align-items:center;cursor:pointer}
+.tools[hidden]{display:none}
+.mk{width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;border:2px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.35);display:grid;place-items:center;font-size:13px;font-weight:500;cursor:pointer}
+.me{width:16px;height:16px;border-radius:50%;background:var(--blue);border:3px solid #fff;box-shadow:0 0 0 6px rgba(29,95,209,.25)}
+@media(max-width:700px){.sheet{left:12px;width:calc(100% - 24px);max-height:42vh}.tools{left:12px;right:12px}}
+</style>
+</head>
+<body>
+<div id="map"></div><div class="note" id="note"></div>
+<div class="bar glass"><a id="back" href="index.html">← หน้าหลัก</a><b>TRAIL · BAN NA DOEM</b><span id="tag" style="font-size:12px;color:var(--mute)"></span></div>
+
+<div class="tools glass" id="tools" hidden>
+ <button id="mLine" class="on">วาดเส้นทาง</button><button id="mStop">ปักจุดแวะ</button>
+ <select id="sname"><option>สะพาน</option><option>รร.นงลักษณ์</option><option>ริมคลอง</option><option>ทางรถไฟ</option><option>ตลาด</option><option>จุดชมวิว</option><option value="*">ชื่ออื่น…</option></select>
+ <label><input type="checkbox" id="snap" checked>เกาะตามคลอง/ทาง</label>
+ <label><input type="checkbox" id="osm" checked>แสดงคลอง ทางรถไฟ สะพาน ตลาด</label>
+ <button id="undo">ย้อนจุด</button><button id="clr">ล้าง</button><button id="cp">คัดลอก JSON</button><button id="imp">นำเข้า</button>
+</div>
+
+<div class="sheet glass">
+ <small>WALKING TRAIL</small>
+ <h1>เทรลริมคลอง บ้านนาเดิม</h1>
+ <div class="meta"><span id="dist">—</span><span id="time">—</span><span id="cnt">—</span></div>
+ <div class="btns"><button class="btn" id="play" disabled>▶ เล่นเส้นทาง</button><button class="btn alt" id="ov" disabled>ภาพรวม</button></div>
+ <div class="stops" id="stops"></div>
+ <p class="empty" id="empty">เส้นทางยังไม่ถูกตั้งค่า เปิดโหมดแก้ไขโดยเติม <b>#edit</b> ท้ายลิงก์หน้านี้ แล้วแตะบนแผนที่ตามแนวคลองเพื่อวาดเส้นทาง</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.js"></script>
+<script>
+/* วางผลลัพธ์จากปุ่ม "คัดลอก JSON" ลงใน ROUTE เพื่อเผยแพร่ให้ทุกคนเห็น */
+/* ตัวช่วยสำหรับตัวดูตัวอย่างในแอปที่ส่ง fetch ผ่านชั้นกลาง: แปลง Request เป็น URL + ตัวเลือกธรรมดา (ตัดสัญญาณยกเลิกที่ส่งต่อไม่ได้ ทำให้ MapLibre ไม่เกิด DataCloneError) */
+(()=>{const of=window.fetch;if(typeof of!=='function'||typeof Request==='undefined')return;
+ window.fetch=function(input,init){
+  try{if(input instanceof Request&&/^(GET|HEAD)$/.test(input.method)){const h={};input.headers.forEach((v,k)=>{h[k]=v});
+   return of.call(this,input.url,{method:input.method,headers:h,credentials:input.credentials,cache:input.cache,...init})}}catch(e){}
+  return of.call(this,input,init)}})();
+const ROUTE={line:[],stops:[]};
+const C=[99.29999010854985,8.8905057056147];
+const EDIT=location.hash==='#edit';
+const $=i=>document.getElementById(i);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function showNote(h){$('note').innerHTML=h;$('note').classList.add('show')}
+const GM='<a target="_blank" rel="noopener" href="https://www.google.com/maps?q=8.8905057056147,99.29999010854985">เปิดใน Google Maps</a>';
+$('back').addEventListener('click',e=>{try{if(document.referrer&&new URL(document.referrer).origin===location.origin&&history.length>1){e.preventDefault();history.back()}}catch(_){}});
+function hasGL(){try{const c=document.createElement('canvas');return !!(c.getContext('webgl2')||c.getContext('webgl'))}catch(e){return false}}
+if(typeof maplibregl==='undefined'||!hasGL()){showNote('แสดงแผนที่ 3D ไม่ได้ในตอนนี้ (เบราว์เซอร์ไม่รองรับหรือเน็ตมีปัญหา)<br>'+GM)}else{
+
+let line=ROUTE.line.slice(),stops=ROUTE.stops.slice(),mode='line',markers=[],snapPts=[],playing=false,raf=0;
+function load(){try{const o=JSON.parse(localStorage.getItem('bh-trail')||'null');if(o){line=o.line||[];stops=o.stops||[]}}catch(e){}}
+function save(){try{localStorage.setItem('bh-trail',JSON.stringify({line,stops}))}catch(e){}}
+if(EDIT){load();$('tools').hidden=false;$('tag').textContent='EDIT'}
+
+const R=6371000,rad=Math.PI/180;
+const dist=(a,b)=>{const x=(b[0]-a[0])*rad*Math.cos((a[1]+b[1])/2*rad),y=(b[1]-a[1])*rad;return Math.sqrt(x*x+y*y)*R};
+const bearing=(a,b)=>{const y=Math.sin((b[0]-a[0])*rad)*Math.cos(b[1]*rad),x=Math.cos(a[1]*rad)*Math.sin(b[1]*rad)-Math.sin(a[1]*rad)*Math.cos(b[1]*rad)*Math.cos((b[0]-a[0])*rad);return(Math.atan2(y,x)/rad+360)%360};
+function cum(){const c=[0];for(let i=1;i<line.length;i++)c.push(c[i-1]+dist(line[i-1],line[i]));return c}
+function at(d,c){let i=1;while(i<c.length-1&&c[i]<d)i++;const t=(d-c[i-1])/((c[i]-c[i-1])||1),a=line[i-1],b=line[i];return[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,i]}
+
+const map=new maplibregl.Map({container:'map',style:'https://tiles.openfreemap.org/styles/positron',center:C,zoom:14.5,pitch:0,maxPitch:80,attributionControl:{compact:true}});
+map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'bottom-right');
+const slow=setTimeout(()=>showNote('โหลดแผนที่ไม่สำเร็จ ตรวจอินเทอร์เน็ตแล้วรีเฟรช<br>'+GM),15000);map.once('load',()=>clearTimeout(slow));
+const dce=e=>{const er=e&&(e.error||e.reason||e),m=String((er&&er.message)||'');if((er&&er.name==='DataCloneError')||/cloned/i.test(m)){clearTimeout(slow);showNote('ตัวดูตัวอย่างนี้แสดงแผนที่ 3D ไม่ได้ (น่าจะแสดงได้เมื่อเปิดจากเว็บจริง)<br>'+GM)}};
+map.on('error',dce);addEventListener('unhandledrejection',dce);addEventListener('error',dce);
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const feat=(g,p)=>({type:'Feature',properties:p||{},geometry:g});
+const fc=f=>({type:'FeatureCollection',features:f});
+const empty=fc([]);
+
+map.on('load',()=>{
+ ['osm-lines','osm-pts','route','done','verts'].forEach(i=>map.addSource(i,{type:'geojson',data:empty}));
+ map.addLayer({id:'osm-canal',type:'line',source:'osm-lines',filter:['==',['get','kind'],'canal'],paint:{'line-color':'#7fb2ff','line-width':3,'line-opacity':.7}});
+ map.addLayer({id:'osm-rail',type:'line',source:'osm-lines',filter:['==',['get','kind'],'rail'],paint:{'line-color':'#444','line-width':2,'line-dasharray':[3,2]}});
+ map.addLayer({id:'osm-path',type:'line',source:'osm-lines',filter:['==',['get','kind'],'path'],paint:{'line-color':'#999','line-width':1.5,'line-dasharray':[1,2]}});
+ map.addLayer({id:'casing',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#fff','line-width':10}});
+ map.addLayer({id:'route',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#1d5fd1','line-width':5}});
+ map.addLayer({id:'done',type:'line',source:'done',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#0b2a66','line-width':5}});
+ map.addLayer({id:'verts',type:'circle',source:'verts',paint:{'circle-radius':3.5,'circle-color':'#fff','circle-stroke-color':'#1d5fd1','circle-stroke-width':2}});
+ map.addLayer({id:'osm-pts',type:'circle',source:'osm-pts',paint:{'circle-radius':6,'circle-stroke-width':2,'circle-stroke-color':'#fff','circle-color':['match',['get','kind'],'market','#e8590c','school','#2b8a3e','bridge','#7048e8','#444']}});
+ render();overview(true);if(EDIT)loadOSM();
+});
+
+function render(){
+ const L=line.length>1?feat({type:'LineString',coordinates:line}):null;
+ map.getSource('route').setData(L?fc([L]):empty);
+ map.getSource('verts').setData(EDIT?fc(line.map(p=>feat({type:'Point',coordinates:p}))):empty);
+ markers.forEach(m=>m.remove());markers=[];
+ const c=cum();
+ stops.forEach((s,i)=>{const e=document.createElement('div');e.className='mk';e.textContent=i+1;
+  markers.push(new maplibregl.Marker({element:e}).setLngLat([s.lon,s.lat]).setPopup(new maplibregl.Popup({offset:18}).setHTML('<b>'+esc(s.name)+'</b>')).addTo(map))});
+ const tot=c.length?c[c.length-1]:0;
+ $('dist').textContent=tot?(tot/1000).toFixed(1)+' กม.':'—';
+ $('time').textContent=tot?'เดินราว '+Math.max(1,Math.round(tot/1000/4*60))+' นาที':'—';
+ $('cnt').textContent=stops.length?stops.length+' จุดแวะ':'—';
+ $('empty').style.display=line.length>1?'none':'block';
+ $('play').disabled=$('ov').disabled=line.length<2;
+ const box=$('stops');box.innerHTML='';
+ stops.forEach((s,i)=>{let d='';if(line.length>1){let bi=0,bd=1e9;line.forEach((p,k)=>{const x=dist(p,[s.lon,s.lat]);if(x<bd){bd=x;bi=k}});d=(c[bi]/1000).toFixed(1)+' กม.'}
+  const b=document.createElement('button');b.innerHTML='<i>'+(i+1)+'</i><span>'+esc(s.name)+'</span><small>'+d+'</small>';
+  b.onclick=()=>{stopPlay();RM?map.jumpTo({center:[s.lon,s.lat],zoom:17.3,pitch:55}):map.flyTo({center:[s.lon,s.lat],zoom:17.3,pitch:55,bearing:-20,speed:.8,essential:true});markers[i].togglePopup()};box.appendChild(b)});
+}
+function overview(first){
+ const pts=line.concat(stops.map(s=>[s.lon,s.lat]));
+ if(pts.length<2){if(first)return;map.easeTo({center:C,zoom:15});return}
+ const b=new maplibregl.LngLatBounds(pts[0],pts[0]);pts.forEach(p=>b.extend(p));
+ map.fitBounds(b,{padding:{top:90,bottom:120,left:window.innerWidth>700?420:30,right:40},pitch:40,bearing:0,duration:RM?0:1200});
+}
+$('ov').onclick=()=>{stopPlay();overview()};
+
+/* ---- เล่นเส้นทางแบบกล้องไล่ตาม ---- */
+function stopPlay(){playing=false;cancelAnimationFrame(raf);$('play').textContent='▶ เล่นเส้นทาง';map.getSource('done')&&map.getSource('done').setData(empty)}
+$('play').onclick=()=>{
+ if(playing){stopPlay();return}
+ if(line.length<2)return;
+ const c=cum(),tot=c[c.length-1];playing=true;$('play').textContent='■ หยุด';
+ let b0=bearing(line[0],line[1]),t0=performance.now();
+ map.jumpTo({center:line[0],zoom:17,pitch:64,bearing:b0});
+ const step=now=>{if(!playing)return;
+  const d=Math.min(tot,(now-t0)/1000*70);
+  const p=at(d,c),q=at(Math.min(tot,d+40),c);
+  let tb=bearing([p[0],p[1]],[q[0],q[1]]);if(d+40>tot)tb=b0;
+  let df=((tb-b0+540)%360)-180;b0=(b0+df*.06+360)%360;
+  map.jumpTo({center:[p[0],p[1]],bearing:b0,pitch:64,zoom:17});
+  map.getSource('done').setData(feat({type:'LineString',coordinates:line.slice(0,p[2]).concat([[p[0],p[1]]])}));
+  if(d>=tot){stopPlay();overview();return}
+  raf=requestAnimationFrame(step)};
+ raf=requestAnimationFrame(step);
+};
+['mousedown','touchstart','wheel'].forEach(ev=>map.getCanvas().addEventListener(ev,()=>{if(playing)stopPlay()},{passive:true}));
+
+/* ---- โหมดแก้ไข ---- */
+if(EDIT){
+ $('mLine').onclick=()=>{mode='line';$('mLine').classList.add('on');$('mStop').classList.remove('on')};
+ $('mStop').onclick=()=>{mode='stop';$('mStop').classList.add('on');$('mLine').classList.remove('on')};
+ const snap=p=>{if(!$('snap').checked)return p;let b=null,bd=30;for(const q of snapPts){const d=dist(p,q);if(d<bd){bd=d;b=q}}return b||p};
+ map.on('click',e=>{
+  if(playing)return;let p=[e.lngLat.lng,e.lngLat.lat];
+  if(mode==='line'){line.push(snap(p))}
+  else{
+   let name=$('sname').value;
+   const px=e.point,hit=map.queryRenderedFeatures([[px.x-12,px.y-12],[px.x+12,px.y+12]],{layers:['osm-pts']})[0];
+   if(hit){p=hit.geometry.coordinates;if(hit.properties.name&&name==='*')name=hit.properties.name}
+   if(name==='*'){name=prompt('ชื่อจุดแวะ');if(!name)return}
+   stops.push({name,lon:+p[0].toFixed(6),lat:+p[1].toFixed(6)})}
+  save();render()});
+ $('undo').onclick=()=>{if(mode==='line')line.pop();else stops.pop();save();render()};
+ $('clr').onclick=()=>{if(confirm('ล้างเส้นทางและจุดแวะทั้งหมด?')){line=[];stops=[];save();render()}};
+ $('cp').onclick=async()=>{const t=JSON.stringify({line:line.map(p=>[+p[0].toFixed(6),+p[1].toFixed(6)]),stops});
+  try{await navigator.clipboard.writeText(t);alert('คัดลอกแล้ว นำไปวางแทน ROUTE ในไฟล์')}catch(e){prompt('คัดลอกข้อความนี้',t)}};
+ $('imp').onclick=()=>{const t=prompt('วาง JSON ของเส้นทาง');if(!t)return;try{const o=JSON.parse(t);if(!Array.isArray(o.line))throw 0;line=o.line;stops=o.stops||[];save();render();overview()}catch(e){alert('JSON ไม่ถูกต้อง')}};
+ $('osm').onchange=()=>{const v=$('osm').checked?'visible':'none';['osm-canal','osm-rail','osm-path','osm-pts'].forEach(l=>map.setLayoutProperty(l,'visibility',v))};
+}
+
+/* ---- ข้อมูลฟรีจาก OpenStreetMap ---- */
+async function loadOSM(){
+ const a=`(around:4000,${C[1]},${C[0]})`;
+ const q=`[out:json][timeout:25];(way["waterway"~"canal|river|stream|drain"]${a};way["railway"="rail"]${a};way["highway"~"footway|path|cycleway|pedestrian|track"]${a};way["bridge"]["highway"]${a};nwr["amenity"~"marketplace|school"]${a};);out geom 1500;`;
+ try{
+  const j=await(await Promise.race([fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q)}),new Promise((_,no)=>setTimeout(()=>no(new Error('timeout')),25000))])).json();
+  const lines=[],pts=[];snapPts=[];
+  j.elements.forEach(e=>{const t=e.tags||{},nm=t['name:th']||t.name||'';
+   if(e.type==='way'&&e.geometry){const g=e.geometry.map(x=>[x.lon,x.lat]);
+    const kind=t.waterway?'canal':t.railway?'rail':(t.amenity?'area':'path');
+    if(kind==='canal'||kind==='path'){lines.push(feat({type:'LineString',coordinates:g},{kind}));g.forEach(p=>snapPts.push(p))}
+    else if(kind==='rail')lines.push(feat({type:'LineString',coordinates:g},{kind}));
+    if(t.bridge&&t.highway){const m=g[Math.floor(g.length/2)];pts.push(feat({type:'Point',coordinates:m},{kind:'bridge',name:nm||'สะพาน'}))}
+    if(t.amenity&&g.length){const m=g.reduce((s,p)=>[s[0]+p[0]/g.length,s[1]+p[1]/g.length],[0,0]);pts.push(feat({type:'Point',coordinates:m},{kind:t.amenity==='school'?'school':'market',name:nm}))}}
+   else if(e.type==='node'&&t.amenity)pts.push(feat({type:'Point',coordinates:[e.lon,e.lat]},{kind:t.amenity==='school'?'school':'market',name:nm}));
+  });
+  map.getSource('osm-lines').setData(fc(lines));map.getSource('osm-pts').setData(fc(pts));
+ }catch(e){$('tag').textContent='EDIT · โหลดข้อมูล OSM ไม่ได้'}
+}
+addEventListener('pageshow',e=>{if(e.persisted)map.resize()});
+}
+</script>
+</body>
+</html>

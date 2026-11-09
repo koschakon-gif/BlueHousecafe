@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Admin · Blue House Café</title>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&family=Prompt:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#111;--mute:#7a7a7a;--line:#e4e4e4;--soft:#f6f6f6}
+*{box-sizing:border-box}body{margin:0;font-family:'Jost','Prompt',system-ui,sans-serif;font-weight:300;color:var(--ink);background:#fff;line-height:1.6}
+header{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+header b{letter-spacing:.28em;font-size:13px;font-weight:500}header span{font-size:12px;color:var(--mute)}
+main{max-width:860px;margin:auto;padding:24px 18px 120px}
+.box{max-width:360px;margin:12vh auto;padding:28px;border:1px solid var(--line)}
+h1{font-size:14px;letter-spacing:.3em;font-weight:500;margin:0 0 18px}
+h2{font-size:13px;letter-spacing:.3em;font-weight:500;margin:36px 0 12px;padding-top:24px;border-top:1px solid var(--line)}
+label{display:block;font-size:12px;color:var(--mute);margin:10px 0 3px;letter-spacing:.06em}
+select{width:100%;border:1px solid var(--line);padding:10px 12px;font:inherit;font-size:14px;background:#fff;color:var(--ink)}
+.chk{display:flex;align-items:center;gap:8px;margin:10px 0 0;font-size:13px;color:var(--ink)}.chk input{width:auto}
+input,textarea{width:100%;border:1px solid var(--line);padding:10px 12px;font:inherit;font-size:14px;background:#fff;color:var(--ink)}
+input:focus{outline:2px solid var(--ink);outline-offset:-1px}
+button{border:1px solid var(--ink);background:var(--ink);color:#fff;padding:10px 16px;font:inherit;font-size:12px;letter-spacing:.16em;cursor:pointer;text-transform:uppercase}
+button.alt{background:#fff;color:var(--ink)}button:disabled{opacity:.4;cursor:default}
+.prow{border:1px solid var(--line);padding:12px;margin-bottom:8px}.prow .top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:6px}.prow small{color:var(--mute);font-size:11px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}.grid3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:0 14px}
+.row{border:1px solid var(--line);padding:14px;margin-bottom:12px;display:grid;grid-template-columns:96px 1fr;gap:14px}
+.row .ph{width:96px;height:96px;background:var(--soft);display:grid;place-items:center;color:var(--mute);font-size:11px;overflow:hidden}
+.row .ph img{width:100%;height:100%;object-fit:cover}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.acts button{padding:6px 10px;font-size:11px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:12px 20px;display:flex;gap:10px;justify-content:flex-end;align-items:center}
+#msg{margin-right:auto;font-size:13px;color:var(--mute)}#msg.err{color:#c92a2a}#msg.ok{color:#2b8a3e}
+.err{color:#c92a2a;font-size:13px}.hint{font-size:12px;color:var(--mute);margin-top:4px}
+@media(max-width:640px){.grid2,.grid3{grid-template-columns:1fr}.row{grid-template-columns:1fr}.row .ph{width:100%;height:160px}}
+</style>
+</head>
+<body>
+<div id="login" class="box" hidden>
+ <h1>ADMIN</h1>
+ <label for="em">อีเมล</label><input id="em" type="email" autocomplete="username">
+ <label for="pw">รหัสผ่าน</label><input id="pw" type="password" autocomplete="current-password">
+ <p class="err" id="lerr"></p>
+ <button id="go" style="width:100%">เข้าสู่ระบบ</button>
+</div>
+
+<div id="app" hidden>
+ <header><b>BLUE HOUSE · ADMIN</b><span><span id="who"></span> <button class="alt" id="out" style="padding:5px 10px">ออก</button></span></header>
+ <main>
+  <h2 style="border:0;margin-top:0;padding-top:0">ลิงก์ และข้อมูลทั่วไป</h2>
+  <div class="grid2">
+   <div><label>ลิงก์ QRder</label><input id="l_qrder" placeholder="https://..."></div>
+   <div><label>ลิงก์สั่งเค้กล่วงหน้า</label><input id="l_cake" placeholder="https://..."></div>
+   <div><label>ลิงก์ Blue Delivery</label><input id="l_delivery" placeholder="https://..."></div>
+   <div><label>ลิงก์ LINE OA</label><input id="l_line" placeholder="https://line.me/R/ti/p/@..."></div>
+  </div>
+  <label>Google Calendar ID (ปฏิทินกิจกรรม)</label><input id="l_calId" placeholder="xxxx@group.calendar.google.com">
+  <p class="hint">เว้นว่างได้ ช่องที่เว้นว่างจะใช้ค่าตั้งต้นในไฟล์หน้าเว็บ (ยกเว้น LINE ที่เว้นว่าง = ซ่อนปุ่ม)</p>
+
+  <h2>เค้ก</h2>
+  <p class="hint" style="margin:-6px 0 12px">ถ้ายังไม่เคยบันทึกเค้กที่นี่ หน้าเว็บจะแสดงเค้กตั้งต้นของร้าน เมื่อบันทึกแล้วจะใช้รายการนี้แทนทั้งหมด</p>
+  <div id="cakes"></div><button class="alt" id="addCake">+ เพิ่มเค้ก</button>
+
+  <h2>เมนูใหม่ประจำเดือน / ฤดูกาล</h2>
+  <label>ชื่อช่วง (เว้นว่าง = แสดงชื่อเดือนอัตโนมัติ)</label><input id="s_label" placeholder="เช่น เมนูหน้าทุเรียน">
+  <div id="items" style="margin-top:14px"></div><button class="alt" id="addItem">+ เพิ่มเมนู</button>
+
+  <h2>สินค้า (เสื้อ / หมวก / สติกเกอร์)</h2>
+  <p class="hint" style="margin:-6px 0 12px">เมื่อบันทึกสินค้าที่นี่ จะใช้รายการนี้แทนสินค้าตั้งต้นในหน้าเว็บทั้งหมด หมวดที่ไม่มีสินค้าจะขึ้น "เร็ว ๆ นี้"</p>
+  <div id="prods"></div><button class="alt" id="addProd">+ เพิ่มสินค้า</button>
+
+  <h2>สถานที่ท่องเที่ยว (AI Guide · อำเภอบ้านนาเดิม)</h2>
+  <p class="hint" style="margin:-6px 0 12px">ดึงข้อมูลฟรีจาก OpenStreetMap มาเก็บในฐานข้อมูลของคุณ แล้วหน้าเว็บจะอ่านจากที่นี่ ซ่อนหรือแก้ชื่อ เพิ่มคำอธิบาย และเพิ่มสถานที่ที่ OpenStreetMap ยังไม่มีได้ ถ้ายังไม่เคยบันทึก หน้าเว็บจะดึงสดจาก OpenStreetMap เหมือนเดิม</p>
+  <div class="acts" style="margin:0 0 8px"><button id="fetchOsm" class="alt" type="button">ดึงข้อมูลอำเภอบ้านนาเดิมจาก OpenStreetMap</button><button id="addPlace" class="alt" type="button">+ เพิ่มสถานที่เอง</button></div>
+  <p class="hint" id="osmMsg"></p>
+  <div class="grid2"><div><label for="pSearch">ค้นหา</label><input id="pSearch" placeholder="ชื่อสถานที่"></div><div><label for="pCat">หมวด</label><select id="pCat"></select></div></div>
+  <p class="hint" id="pCount"></p>
+  <div id="places"></div>
+  <div class="acts"><button class="alt" id="pPrev" type="button">← ก่อนหน้า</button><button class="alt" id="pNext" type="button">ถัดไป →</button><span class="hint" id="pPage" style="align-self:center"></span></div>
+  <h2>ไกด์ AI (Gemini)</h2>
+  <p class="hint" style="margin:-6px 0 12px">ทดสอบว่าฟังก์ชัน bluehouse-guide ติดตั้งและตอบได้ ถ้าติดขัดจะบอกสาเหตุให้ (ขั้นตอนติดตั้งอยู่ใน DEPLOY.md)</p>
+  <div class="acts" style="margin:0 0 8px"><button id="aiTest" class="alt" type="button">ทดสอบไกด์ AI</button></div>
+  <p class="hint" id="aiMsg"></p>
+ </main>
+ <div class="bar"><span id="msg"></span><a href="index.html" target="_blank" rel="noopener" style="font-size:12px;letter-spacing:.14em;color:var(--ink)">ดูหน้าเว็บ</a><button id="save">บันทึก</button></div>
+</div>
+
+<script>
+const SB_URL='https://tbpcrsdvpmdbjaazeddt.supabase.co';   // https://xxxxxxxx.supabase.co
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRicGNyc2R2cG1kYmphYXplZGR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4MTY2ODUsImV4cCI6MjEwODM5MjY4NX0.h9053eTUXNpg1DNDvU2vLhL5LqELMtLzkeD5P4Dh4y4';   // anon public key
+const $=i=>document.getElementById(i);
+const CFG_OK=/^https:\/\/[\w-]+\.supabase\.co$/.test(SB_URL)&&SB_KEY.length>=20;
+let ses=null,state={cakes:[],items:[],prods:[],places:[]},dirty=false;const touched=new Set();
+try{ses=JSON.parse(localStorage.getItem('bh-adm')||'null')}catch(e){}
+const saveSes=s=>{ses=s;try{s?localStorage.setItem('bh-adm',JSON.stringify(s)):localStorage.removeItem('bh-adm')}catch(e){}};
+const el=(t,p={},...c)=>{const e=document.createElement(t);Object.assign(e,p);c.flat().forEach(x=>e.append(x));return e};
+function msg(t,cls){$('msg').textContent=t;$('msg').className=cls||''}
+function showLogin(m){$('app').hidden=true;$('login').hidden=false;$('lerr').textContent=m||''}
+
+function tfetch(u,o,ms){return Promise.race([fetch(u,o),new Promise((_,no)=>setTimeout(()=>no(new Error('timeout')),ms))])}
+/* ---------- เชื่อม Supabase ผ่าน REST ---------- */
+async function auth(body,grant){
+ const r=await fetch(SB_URL+'/auth/v1/token?grant_type='+grant,{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});
+ let j={};try{j=await r.json()}catch(e){}
+ if(!r.ok||!j.access_token)throw new Error(j.error_description||j.msg||'เข้าสู่ระบบไม่สำเร็จ');
+ return{access:j.access_token,refresh:j.refresh_token,email:(j.user&&j.user.email)||''}}
+async function api(path,opt={},retry=true){
+ const h={apikey:SB_KEY,Authorization:'Bearer '+(ses?ses.access:SB_KEY),...(opt.headers||{})};
+ const r=await fetch(SB_URL+path,{...opt,headers:h});
+ if(r.status===401&&retry&&ses&&ses.refresh){
+  try{const n=await auth({refresh_token:ses.refresh},'refresh_token');n.email=n.email||ses.email;saveSes(n);return api(path,opt,false)}
+  catch(e){saveSes(null);showLogin('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่');throw e}}
+ return r}
+
+/* ---------- ตรวจข้อมูล (ชุดเดียวกับหน้าเว็บ) ---------- */
+const isUrl=v=>/^https:\/\/[^\s"'<>]+$/.test(v);
+const isLine=v=>/^https:\/\/(line\.me|lin\.ee)\/[^\s"'<>]*$/.test(v);
+const isCal=v=>/^[\w.%+\-@#]{5,200}$/.test(v);
+const isDay=v=>/^\d{4}-\d{2}-\d{2}$/.test(v)&&!isNaN(Date.parse(v));
+const PCATS=[['shirt','เสื้อ'],['cap','หมวก'],['sticker','สติกเกอร์']];
+function collect(){
+ const t=i=>$(i).value.trim(),errs=[],rows=[];
+ if(touched.has('links')){
+  const links={qrder:t('l_qrder'),cake:t('l_cake'),delivery:t('l_delivery'),line:t('l_line'),calId:t('l_calId')};
+  [['qrder','QRder'],['cake','ลิงก์สั่งเค้ก'],['delivery','Delivery']].forEach(([k,n])=>{if(links[k]&&!isUrl(links[k]))errs.push(n+': ต้องขึ้นต้นด้วย https://')});
+  if(links.line&&!isLine(links.line))errs.push('LINE: ต้องเป็นลิงก์ https://line.me/... หรือ https://lin.ee/...');
+  if(links.calId&&!isCal(links.calId))errs.push('Calendar ID ไม่ถูกต้อง');
+  rows.push({key:'links',value:links})}
+ if(touched.has('cakes')){
+  const cakes=state.cakes.map(c=>({image:c.image.trim(),name:c.name.trim(),price:c.price.trim()}));
+  cakes.forEach((c,i)=>{if(!c.image)errs.push('เค้กที่ '+(i+1)+': ยังไม่ได้อัปโหลดรูป')});
+  rows.push({key:'cakes',value:cakes})}
+ if(touched.has('season')){
+  const items=state.items.map(m=>({name:m.name.trim(),price:m.price.trim(),desc:m.desc.trim(),image:m.image.trim(),tag:m.tag.trim(),from:m.from.trim(),to:m.to.trim()}));
+  items.forEach((m,i)=>{const n='เมนูที่ '+(i+1);if(!m.name)errs.push(n+': ใส่ชื่อเมนู');
+   if(m.from&&!isDay(m.from))errs.push(n+': วันเริ่มต้องเป็นรูปแบบ ปปปป-ดด-วว');
+   if(m.to&&!isDay(m.to))errs.push(n+': วันสิ้นสุดต้องเป็นรูปแบบ ปปปป-ดด-วว');
+   if(m.from&&m.to&&m.from>m.to)errs.push(n+': วันเริ่มอยู่หลังวันสิ้นสุด')});
+  rows.push({key:'season',value:{label:t('s_label'),items}})}
+ if(touched.has('products')){
+  const prods=state.prods.map(m=>({cat:m.cat,name:m.name.trim(),price:m.price.trim(),desc:m.desc.trim(),image:m.image.trim(),tag:m.tag.trim(),link:m.link.trim(),soldout:!!m.soldout}));
+  prods.forEach((m,i)=>{const n='สินค้าที่ '+(i+1);if(!m.name)errs.push(n+': ใส่ชื่อสินค้า');
+   if(!PCATS.some(c=>c[0]===m.cat))errs.push(n+': เลือกหมวด');
+   if(m.link&&!isUrl(m.link))errs.push(n+': ลิงก์ต้องขึ้นต้นด้วย https://')});
+  rows.push({key:'products',value:prods})}
+ if(touched.has('places')){
+  const out=[];state.places.forEach((p,i)=>{const n='สถานที่ที่ '+(i+1)+' ('+(String(p.name||'').trim()||'ไม่มีชื่อ')+')',lat=+p.lat,lon=+p.lon;
+   if(!String(p.name||'').trim())errs.push(n+': ใส่ชื่อ');
+   if(!Number.isFinite(lat)||lat<5||lat>21||!Number.isFinite(lon)||lon<97||lon>106)errs.push(n+': พิกัดไม่ถูกต้อง (ต้องอยู่ในประเทศไทย)');
+   out.push({id:String(p.id),name:String(p.name||'').trim(),lat:+lat.toFixed(6),lon:+lon.toFixed(6),cat:p.cat,note:String(p.note||'').trim(),hidden:!!p.hidden})});
+  if(out.length>1500)errs.push('มีสถานที่มากเกิน 1500 แห่ง');
+  rows.push({key:'places',value:out})}
+ return{errs,rows}}
+
+/* ---------- รูปภาพ ---------- */
+async function shrink(f){
+ let bmp;try{bmp=await createImageBitmap(f)}catch(e){throw new Error('ไฟล์รูปนี้ไม่รองรับ ใช้ JPG, PNG หรือ WebP')}
+ const s=Math.min(1,1200/Math.max(bmp.width,bmp.height)),c=document.createElement('canvas');
+ c.width=Math.round(bmp.width*s);c.height=Math.round(bmp.height*s);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+ return new Promise((ok,no)=>c.toBlob(b=>b?ok(b):no(new Error('แปลงรูปไม่ได้')),'image/jpeg',.85))}
+async function upload(file,folder){
+ const blob=await shrink(file),path=folder+'/'+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.jpg';
+ const r=await api('/storage/v1/object/bluehouse-site/'+path,{method:'POST',headers:{'Content-Type':'image/jpeg','x-upsert':'false','cache-control':'max-age=31536000'},body:blob});
+ if(!r.ok)throw new Error('อัปโหลดไม่สำเร็จ ('+r.status+')');
+ return SB_URL+'/storage/v1/object/public/bluehouse-site/'+path}
+
+/* ---------- วาดฟอร์ม ---------- */
+const touch=k=>{touched.add(k);dirty=true;msg('มีการแก้ไขที่ยังไม่บันทึก')};
+function field(label,obj,key,ph,sec){const i=el('input',{value:obj[key]||'',placeholder:ph||''});i.oninput=()=>{obj[key]=i.value;touch(sec)};return el('div',{},el('label',{textContent:label}),i)}
+function sel(label,obj,key,opts,sec){const s=el('select',{});opts.forEach(([v,l])=>s.append(el('option',{value:v,textContent:l})));s.value=obj[key];s.onchange=()=>{obj[key]=s.value;touch(sec)};return el('div',{},el('label',{textContent:label}),s)}
+function chk(label,obj,key,sec){const i=el('input',{type:'checkbox',checked:!!obj[key]});i.onchange=()=>{obj[key]=i.checked;touch(sec)};return el('label',{className:'chk'},i,label)}
+function photo(obj,folder,sec){
+ const ph=el('div',{className:'ph'});const draw=()=>{ph.replaceChildren(obj.image?el('img',{src:obj.image,alt:''}):'ยังไม่มีรูป')};draw();
+ const f=el('input',{type:'file',accept:'image/*',hidden:true});
+ const b=el('button',{className:'alt',textContent:'อัปโหลดรูป',type:'button'});
+ b.onclick=()=>f.click();
+ f.onchange=async()=>{const file=f.files[0];if(!file)return;b.disabled=true;b.textContent='กำลังอัปโหลด…';
+  try{obj.image=await upload(file,folder);draw();touch(sec)}catch(e){msg(e.message,'err')}
+  b.disabled=false;b.textContent='อัปโหลดรูป';f.value=''};
+ return{ph,ctl:[b,f]}}
+function move(arr,i,d,redraw,sec){const j=i+d;if(j<0||j>=arr.length)return;[arr[i],arr[j]]=[arr[j],arr[i]];touch(sec);redraw()}
+function acts(p,arr,i,redraw,sec){return el('div',{className:'acts'},...p.ctl,
+  el('button',{className:'alt',textContent:'↑',type:'button',onclick:()=>move(arr,i,-1,redraw,sec)}),
+  el('button',{className:'alt',textContent:'↓',type:'button',onclick:()=>move(arr,i,1,redraw,sec)}),
+  el('button',{className:'alt',textContent:'ลบ',type:'button',onclick:()=>{arr.splice(i,1);touch(sec);redraw()}}))}
+function renderCakes(){
+ $('cakes').replaceChildren(...state.cakes.map((c,i)=>{const p=photo(c,'cakes','cakes');
+  return el('div',{className:'row'},p.ph,el('div',{},
+   el('div',{className:'grid2'},field('ชื่อเค้ก (ไม่บังคับ)',c,'name','','cakes'),field('ราคา (ไม่บังคับ)',c,'price','เช่น 120','cakes')),
+   acts(p,state.cakes,i,renderCakes,'cakes')))}));
+ $('addCake').disabled=state.cakes.length>=12}
+function renderItems(){
+ $('items').replaceChildren(...state.items.map((m,i)=>{const p=photo(m,'menu','season');
+  return el('div',{className:'row'},p.ph,el('div',{},
+   el('div',{className:'grid3'},field('ชื่อเมนู *',m,'name','','season'),field('ราคา',m,'price','','season'),field('ป้าย',m,'tag','เช่น ใหม่','season')),
+   field('คำอธิบายสั้น ๆ',m,'desc','','season'),
+   el('div',{className:'grid2'},field('แสดงตั้งแต่วันที่',m,'from','2026-11-01','season'),field('แสดงถึงวันที่',m,'to','2026-11-30','season')),
+   acts(p,state.items,i,renderItems,'season')))}));
+ $('addItem').disabled=state.items.length>=20}
+function renderProds(){
+ $('prods').replaceChildren(...state.prods.map((m,i)=>{const p=photo(m,'products','products');
+  return el('div',{className:'row'},p.ph,el('div',{},
+   el('div',{className:'grid3'},field('ชื่อสินค้า *',m,'name','','products'),sel('หมวด',m,'cat',PCATS,'products'),field('ราคา',m,'price','เช่น 350','products')),
+   el('div',{className:'grid2'},field('ป้าย',m,'tag','เช่น ใหม่','products'),field('ลิงก์สั่งซื้อ (ไม่บังคับ)',m,'link','https://...','products')),
+   field('คำอธิบาย',m,'desc','','products'),chk('สินค้าหมด (แสดงป้าย "หมด")',m,'soldout','products'),
+   acts(p,state.prods,i,renderProds,'products')))}));
+ $('addProd').disabled=state.prods.length>=60}
+$('addCake').onclick=()=>{state.cakes.push({image:'',name:'',price:''});touch('cakes');renderCakes()};
+$('addItem').onclick=()=>{state.items.push({name:'',price:'',desc:'',image:'',tag:'',from:'',to:''});touch('season');renderItems()};
+$('addProd').onclick=()=>{state.prods.push({cat:'shirt',name:'',price:'',desc:'',image:'',tag:'',link:'',soldout:false});touch('products');renderProds()};
+document.querySelectorAll('main input[id^="l_"]').forEach(i=>i.addEventListener('input',()=>touch('links')));
+$('s_label').addEventListener('input',()=>touch('season'));
+
+/* ---------- สถานที่ท่องเที่ยว (ดึงจาก OpenStreetMap เก็บในฐานข้อมูล) ---------- */
+const PLCATS=[['sight','ที่เที่ยว'],['view','วิว/ธรรมชาติ'],['temple','วัด'],['food','ที่กิน'],['cafe','คาเฟ่'],['market','ตลาด']];
+const CAFE=[99.29999010854985,8.8905057056147],PAGE=25;let pPage=0;
+$('pCat').replaceChildren(el('option',{value:'all',textContent:'ทุกหมวด'}),...PLCATS.map(([v,l])=>el('option',{value:v,textContent:l})));
+const osmCls=t=>t.amenity==='marketplace'?'market':(t.tourism==='viewpoint'||t.natural||t.leisure==='park'||t.waterway==='waterfall')?'view':t.amenity==='place_of_worship'?'temple':t.historic?'sight':t.amenity==='cafe'?'cafe':/restaurant|food_court|fast_food/.test(t.amenity||'')?'food':'sight';
+const OSMTAGS=a=>`nwr["tourism"~"attraction|viewpoint|museum|gallery|zoo|theme_park"]${a};nwr["amenity"~"restaurant|cafe|place_of_worship|marketplace"]${a};nwr["natural"~"beach|waterfall|peak"]${a};nwr["leisure"="park"]${a};nwr["historic"]${a};`;
+async function overpass(q){const r=await tfetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q)},60000);if(!r.ok)throw new Error('Overpass '+r.status);const j=await r.json();return j.elements||[]}
+function placeCount(){const all=state.places,v=all.filter(p=>!p.hidden).length;$('pCount').textContent=all.length?`ทั้งหมด ${all.length} แห่ง · แสดง ${v} · ซ่อน ${all.length-v}`:'ยังไม่มีข้อมูลสถานที่ (กดดึงข้อมูลจาก OpenStreetMap)'}
+function renderPlaces(){
+ placeCount();
+ const q=$('pSearch').value.trim().toLowerCase(),c=$('pCat').value;
+ const f=state.places.map((p,i)=>({p,i})).filter(({p})=>(c==='all'||p.cat===c)&&(!q||String(p.name).toLowerCase().includes(q)));
+ const pages=Math.max(1,Math.ceil(f.length/PAGE));if(pPage>=pages)pPage=pages-1;if(pPage<0)pPage=0;
+ $('places').replaceChildren(...f.slice(pPage*PAGE,pPage*PAGE+PAGE).map(({p,i})=>{
+  const show=el('input',{type:'checkbox',checked:!p.hidden});show.onchange=()=>{p.hidden=!show.checked;touch('places');placeCount()};
+  const mine=String(p.id).startsWith('u');
+  return el('div',{className:'prow'},
+   el('div',{className:'top'},el('label',{className:'chk',style:'margin:0'},show,'แสดงในหน้าเว็บ'),
+    el('span',{},el('small',{textContent:mine?'เพิ่มเอง':'OpenStreetMap '+p.id+' · '+(+p.lat).toFixed(4)+', '+(+p.lon).toFixed(4)}),' ',
+     el('button',{className:'alt',type:'button',textContent:'ลบ',style:'padding:4px 10px;font-size:11px',onclick:()=>{state.places.splice(i,1);touch('places');renderPlaces()}}))),
+   el('div',{className:'grid2'},field('ชื่อ *',p,'name','','places'),sel('หมวด',p,'cat',PLCATS,'places')),
+   field('คำอธิบายสั้น ๆ (แสดงตอนกดหมุด)',p,'note','','places'),
+   mine?el('div',{className:'grid2'},field('ละติจูด',p,'lat','8.89','places'),field('ลองจิจูด',p,'lon','99.29','places')):'')}));
+ $('pPage').textContent='หน้า '+(pPage+1)+'/'+pages;$('pPrev').disabled=pPage<=0;$('pNext').disabled=pPage>=pages-1}
+$('pSearch').addEventListener('input',()=>{pPage=0;renderPlaces()});$('pCat').addEventListener('change',()=>{pPage=0;renderPlaces()});
+$('pPrev').onclick=()=>{pPage--;renderPlaces()};$('pNext').onclick=()=>{pPage++;renderPlaces()};
+$('addPlace').onclick=()=>{state.places.unshift({id:'u'+Date.now().toString(36),name:'',lat:CAFE[1],lon:CAFE[0],cat:'sight',note:'',hidden:false});pPage=0;$('pSearch').value='';$('pCat').value='all';touch('places');renderPlaces()};
+$('fetchOsm').onclick=async()=>{
+ const m=$('osmMsg');$('fetchOsm').disabled=true;m.className='hint';m.textContent='กำลังดึงข้อมูลอำเภอบ้านนาเดิม…';
+ try{
+  let els=await overpass(`[out:json][timeout:60];area["boundary"="administrative"]["name"~"บ้านนาเดิม"]->.a;(${OSMTAGS('(area.a)')});out center 1500;`),how='ขอบเขตอำเภอบ้านนาเดิม';
+  if(!els.length){m.textContent='ไม่พบขอบเขตอำเภอใน OpenStreetMap ใช้รัศมี 10 กม. รอบร้านแทน…';
+   els=await overpass(`[out:json][timeout:60];(${OSMTAGS('(around:10000,8.8905057,99.2999901)')});out center 1500;`);how='รัศมี 10 กม. รอบร้าน (ใช้แทนขอบเขตอำเภอ)'}
+  const have=new Set(state.places.map(p=>p.id));let added=0,skipped=0;
+  els.forEach(e=>{const t=e.tags||{},name=String(t['name:th']||t.name||'').trim(),lat=e.lat??(e.center&&e.center.lat),lon=e.lon??(e.center&&e.center.lon);
+   if(!name||lat==null||lon==null){skipped++;return}
+   const id=e.type[0]+e.id;if(have.has(id))return;have.add(id);
+   state.places.push({id,name:name.slice(0,80),lat:+(+lat).toFixed(6),lon:+(+lon).toFixed(6),cat:osmCls(t),note:'',hidden:false});added++});
+  m.textContent=`ดึงจาก${how}: ได้ ${els.length} รายการ เพิ่มใหม่ ${added} แห่ง (ข้าม ${skipped} ที่ไม่มีชื่อ) · กด "บันทึก" เพื่อใช้ในหน้าเว็บ`+(els.length>=1500?' · ข้อมูลอาจถูกตัดที่ 1,500 รายการ':'');
+  if(added)touch('places');pPage=0;renderPlaces()
+ }catch(e){m.className='hint err';m.textContent='ดึงข้อมูลไม่สำเร็จ ('+e.message+') ลองใหม่อีกครั้ง'}
+ $('fetchOsm').disabled=false};
+
+
+/* ---------- ทดสอบไกด์ AI ---------- */
+$('aiTest').onclick=async()=>{
+ const m=$('aiMsg'),b=$('aiTest');b.disabled=true;m.className='hint';m.textContent='กำลังทดสอบ (อาจใช้เวลาสักครู่)…';
+ const say=(t,cls)=>{m.className='hint '+(cls||'');m.textContent=t};
+ try{
+  const r=await tfetch(SB_URL+'/functions/v1/bluehouse-guide',{method:'POST',headers:{'Content-Type':'application/json',apikey:SB_KEY,Authorization:'Bearer '+SB_KEY},body:JSON.stringify({q:'แนะนำที่เที่ยวใกล้ร้านหน่อย'})},30000);
+  let j={};try{j=await r.json()}catch(e){}
+  const e=j&&j.error,last=j&&j.last;
+  if(r.ok&&j.answer)say('ใช้งานได้ ✓ โมเดลที่ตอบ: '+(j.model||'ไม่ระบุ')+' · ตัวอย่างคำตอบ: '+String(j.answer).slice(0,140),'ok');
+  else if(r.status===200&&e==='no_places')say('ฟังก์ชันทำงานแล้ว แต่ยังไม่มีรายการสถานที่ในฐานข้อมูล ให้กด "ดึงข้อมูลอำเภอบ้านนาเดิม" แล้วบันทึกก่อน','err');
+  else if(r.status===404&&!e)say('ยังไม่พบฟังก์ชัน bluehouse-guide ให้ Deploy ใน Supabase → Edge Functions ก่อน','err');
+  else if(r.status===401)say('ฟังก์ชันปฏิเสธคีย์ ตรวจว่า SB_KEY เป็น anon key ของโปรเจกต์นี้','err');
+  else if(r.status===403||e==='origin')say('โดเมนที่เปิดหน้านี้ไม่อยู่ใน Secret ALLOWED_ORIGIN ของฟังก์ชัน','err');
+  else if(e==='no_key')say('ยังไม่ได้ตั้ง Secret GEMINI_API_KEY ใน Supabase → Edge Functions → Secrets','err');
+  else if(e==='places_unavailable')say('ฟังก์ชันอ่านรายการสถานที่ไม่ได้ ตรวจว่ารัน supabase-setup.sql แล้ว','err');
+  else if(r.status===429)say('ถูกจำกัดจำนวนครั้ง (ต่อนาที/ต่อวัน) ลองใหม่ในอีกสักครู่','err');
+  else if(e==='busy')say('โควตาฟรีของ Gemini เต็ม (429) รอสักครู่ หรือเพิ่มรุ่นสำรองใน Secret GEMINI_MODELS','err');
+  else if(e==='ai_unavailable'){
+   say(last===404?'Gemini ไม่พบชื่อรุ่นที่ตั้งไว้ ให้ตั้ง Secret GEMINI_MODELS ตามชื่อรุ่นที่ AI Studio → Rate limits แสดง'
+     :last===400?'Gemini ปฏิเสธคำขอ (400) ตรวจชื่อรุ่น และว่าแผนฟรีรองรับประเทศ/โปรเจกต์ของคุณ'
+     :(last===401||last===403)?'Gemini ปฏิเสธคีย์ (รหัส '+last+') ตรวจ Secret GEMINI_API_KEY'
+     :'เรียก Gemini ไม่สำเร็จ (รหัส '+(last||'ไม่ตอบสนอง')+') ลองใหม่หรือดู Logs ของฟังก์ชัน','err')}
+  else say('ตอบกลับไม่ตรงรูปแบบ (รหัส '+r.status+') ดู Logs ของฟังก์ชันใน Supabase','err')
+ }catch(e){say('เรียกฟังก์ชันไม่ได้ (เครือข่ายหรือ CORS) ตรวจว่า Deploy แล้ว และ ALLOWED_ORIGIN ตรงกับโดเมนนี้','err')}
+ b.disabled=false};
+
+/* ---------- โหลด / บันทึก ---------- */
+async function load(){
+ msg('กำลังโหลด…');
+ const r=await api('/rest/v1/bluehouse_site_config?select=key,value');
+ if(!r.ok){msg('โหลดข้อมูลไม่ได้ ('+r.status+')','err');return}
+ const rows=await r.json(),g=k=>(rows.find(x=>x&&x.key===k)||{}).value;
+ const l=g('links')||{};['qrder','cake','delivery','line','calId'].forEach(k=>$('l_'+k).value=l[k]||'');
+ const c=g('cakes');state.cakes=Array.isArray(c)?c.map(x=>({image:x.image||'',name:x.name||'',price:x.price||''})):[];
+ const s=g('season')||{};$('s_label').value=s.label||'';
+ state.items=(s.items||[]).map(x=>({name:x.name||'',price:x.price||'',desc:x.desc||'',image:x.image||'',tag:x.tag||'',from:x.from||'',to:x.to||''}));
+ const pr=g('products');state.prods=Array.isArray(pr)?pr.map(x=>({cat:PCATS.some(k=>k[0]===x.cat)?x.cat:'sticker',name:x.name||'',price:x.price||'',desc:x.desc||'',image:x.image||'',tag:x.tag||'',link:x.link||'',soldout:!!x.soldout})):[];
+ const pl=g('places');state.places=Array.isArray(pl)?pl.map(x=>({id:String(x.id||'u'+Math.random().toString(36).slice(2,9)),name:x.name||'',lat:x.lat,lon:x.lon,cat:PLCATS.some(k=>k[0]===x.cat)?x.cat:'sight',note:x.note||'',hidden:!!x.hidden})):[];
+ renderCakes();renderItems();renderProds();pPage=0;renderPlaces();dirty=false;touched.clear();msg('')}
+$('save').onclick=async()=>{
+ const {errs,rows}=collect();if(errs.length){msg(errs[0]+(errs.length>1?' (และอีก '+(errs.length-1)+' รายการ)':''),'err');return}
+ if(!rows.length){msg('ยังไม่มีการแก้ไข');return}
+ $('save').disabled=true;msg('กำลังบันทึก…');
+ try{const r=await api('/rest/v1/bluehouse_site_config?on_conflict=key',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows.map(x=>({...x,updated_at:new Date().toISOString()})))});
+  if(r.ok){dirty=false;touched.clear();msg('บันทึกแล้ว '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}),'ok')}
+  else msg(r.status===401||r.status===403?'ไม่มีสิทธิ์บันทึก (ตรวจอีเมลแอดมินใน supabase-setup.sql)':'บันทึกไม่สำเร็จ ('+r.status+')','err')}
+ catch(e){msg('บันทึกไม่สำเร็จ ตรวจอินเทอร์เน็ต','err')}
+ $('save').disabled=false};
+addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
+
+/* ---------- เข้า / ออก ---------- */
+async function enter(){$('login').hidden=true;$('app').hidden=false;$('who').textContent=(ses&&ses.email)||'';await load()}
+$('go').onclick=async()=>{
+ $('lerr').textContent='';$('go').disabled=true;
+ try{saveSes(await auth({email:$('em').value.trim(),password:$('pw').value},'password'));$('pw').value='';await enter()}
+ catch(e){$('lerr').textContent=e.message}
+ $('go').disabled=false};
+$('pw').addEventListener('keydown',e=>{if(e.key==='Enter')$('go').click()});
+$('out').onclick=async()=>{try{await api('/auth/v1/logout',{method:'POST'},false)}catch(e){}saveSes(null);dirty=false;showLogin('')};
+if(!CFG_OK){$('login').hidden=false;$('login').innerHTML='<h1>ADMIN</h1><p class="err">ยังไม่ได้ตั้งค่า SB_URL และ SB_KEY ในไฟล์ admin.html</p>'}
+else if(ses&&ses.access)enter().catch(()=>showLogin('')); else showLogin('');
+</script>
+</body>
+</html>

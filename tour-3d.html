@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>เที่ยวบ้านนาเดิม 3D · Blue House Café</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#1d5fd1;--navy:#0b3d91;--ink:#0f2742;--mute:#5b7089}
+*{box-sizing:border-box}html,body{height:100%;margin:0;font-family:'Prompt',system-ui,sans-serif;color:var(--ink)}
+#map{position:fixed;inset:0}
+.glass{background:rgba(255,255,255,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.6);box-shadow:0 10px 40px rgba(11,61,145,.22)}
+.panel{position:fixed;left:14px;top:calc(14px + env(safe-area-inset-top,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));width:min(380px,calc(100% - 28px));border-radius:24px;display:flex;flex-direction:column;z-index:5;overflow:hidden}
+.head{padding:14px 16px;border-bottom:1px solid #d5e2f3;display:flex;justify-content:space-between;align-items:center}
+.head b{color:var(--navy)}.head a{font-size:13px;color:var(--blue);text-decoration:none}
+#log{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.b{padding:9px 13px;border-radius:14px;max-width:92%;font-size:14px;line-height:1.5}
+.u{background:var(--blue);color:#fff;align-self:flex-end}.a{background:#fff;border:1px solid #d5e2f3}
+.a button{display:block;width:100%;margin-top:6px;border:0;background:#e3eefc;color:var(--navy);border-radius:10px;padding:7px 10px;font:inherit;font-size:13px;cursor:pointer;text-align:left}
+.chips{padding:0 12px 8px;display:flex;gap:6px;flex-wrap:wrap}
+.chips button{border:1px solid #d5e2f3;background:#fff;border-radius:999px;padding:5px 11px;font:inherit;font-size:13px;cursor:pointer}
+form{display:flex;gap:8px;padding:10px 12px;border-top:1px solid #d5e2f3}
+input{flex:1;min-width:0;padding:10px 12px;border:1px solid #d5e2f3;border-radius:12px;font:inherit}
+form button{border:0;background:var(--blue);color:#fff;border-radius:12px;padding:0 16px;font:inherit;cursor:pointer}
+.pin{width:44px;height:44px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:linear-gradient(135deg,#3b82f6,#0b3d91);display:grid;place-items:center;border:3px solid #fff;box-shadow:0 6px 16px rgba(11,61,145,.45);cursor:pointer}
+.pin i{transform:rotate(45deg);font-style:normal;font-size:19px}
+.pin.s{width:34px;height:34px;background:#fff;border-color:var(--blue)}.pin.s i{font-size:15px}
+@media(max-width:700px){.panel{top:auto;height:48vh}}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel glass">
+<div class="head"><b>🗺️ เที่ยวบ้านนาเดิม · AI Guide</b><a href="index.html" id="back">← หน้าหลัก</a></div>
+<div id="log"></div>
+<div class="chips" id="chips"></div>
+<form id="f"><input id="q" placeholder="ถามได้เลย เช่น วัด ที่กิน วิวสวย" autocomplete="off"><button>ส่ง</button></form>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.js"></script>
+<script>
+document.getElementById('back').addEventListener('click',e=>{try{if(document.referrer&&new URL(document.referrer).origin===location.origin&&history.length>1){e.preventDefault();history.back()}}catch(_){}});
+/* ตัวช่วยสำหรับตัวดูตัวอย่างในแอปที่ส่ง fetch ผ่านชั้นกลาง: แปลง Request เป็น URL + ตัวเลือกธรรมดา (ตัดสัญญาณยกเลิกที่ส่งต่อไม่ได้ ทำให้ MapLibre ไม่เกิด DataCloneError) */
+(()=>{const of=window.fetch;if(typeof of!=='function'||typeof Request==='undefined')return;
+ window.fetch=function(input,init){
+  try{if(input instanceof Request&&/^(GET|HEAD)$/.test(input.method)){const h={};input.headers.forEach((v,k)=>{h[k]=v});
+   return of.call(this,input.url,{method:input.method,headers:h,credentials:input.credentials,cache:input.cache,...init})}}catch(e){}
+  return of.call(this,input,init)}})();
+if(typeof maplibregl==='undefined'){document.body.insertAdjacentHTML('beforeend','<div style="position:fixed;inset:0;display:grid;place-items:center;text-align:center;padding:20px;background:#f6f6f6;color:#5b7089;z-index:1;line-height:1.8">โหลดแผนที่ไม่สำเร็จ ตรวจอินเทอร์เน็ตแล้วรีเฟรช<br><a href="https://www.google.com/maps?q=8.8905057056147,99.29999010854985" target="_blank" rel="noopener">เปิดใน Google Maps</a></div>')}else{
+const C=[99.29999010854985,8.8905057056147], RADIUS_KM=15;
+const MY_PLACES=[ /* {name:'ชื่อที่เที่ยว',lat:0,lon:0,cat:'view',note:'คำอธิบาย'} */ ];
+const CATS={
+ food:{label:'ที่กิน',icon:'🍜',kw:['กิน','อาหาร','ข้าว','ร้าน','หิว','อร่อย']},
+ cafe:{label:'คาเฟ่',icon:'☕',kw:['กาแฟ','คาเฟ่','เค้ก','ขนม']},
+ temple:{label:'วัด',icon:'🛕',kw:['วัด','ไหว้','ศาลเจ้า','บุญ']},
+ view:{label:'วิว/ธรรมชาติ',icon:'⛰️',kw:['วิว','ธรรมชาติ','ถ่ายรูป','ทะเล','น้ำตก','สวน','ภูเขา']},
+ sight:{label:'ที่เที่ยวอื่น',icon:'📍',kw:['เที่ยว','ที่น่าสนใจ','พิพิธภัณฑ์','ตลาด']}
+};
+const map=new maplibregl.Map({container:'map',style:'https://tiles.openfreemap.org/styles/liberty',center:C,zoom:13,pitch:0,maxPitch:80});
+map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'bottom-right');
+const home=document.createElement('div');home.className='pin';home.innerHTML='<i>☕</i>';
+new maplibregl.Marker({element:home,anchor:'bottom'}).setLngLat(C).setPopup(new maplibregl.Popup({offset:30}).setHTML('<b>Blue House Café</b><br>08:30–16:00 · 096-654-2536')).addTo(map);
+home.onclick=()=>fly(C,17,62);
+function fly(c,z,p){map.flyTo({center:c,zoom:z,pitch:p,bearing:-20,speed:.8,curve:1.5,essential:true})}
+map.on('load',()=>setTimeout(()=>fly(C,16.5,60),500));
+
+let places=MY_PLACES.map(p=>({...p})),markers=[];
+function km(a,b,c,d){const r=Math.PI/180,x=(c-a)*r,y=(d-b)*r*Math.cos((a+c)/2*r);return Math.sqrt(x*x+y*y)*6371}
+function classify(t){
+ if(t.tourism==='viewpoint'||t.natural||t.leisure==='park'||t.waterway==='waterfall')return'view';
+ if(t.amenity==='place_of_worship')return'temple';
+ if(t.historic)return'sight';
+ if(t.amenity==='cafe')return'cafe';
+ if(/restaurant|food_court|fast_food/.test(t.amenity||''))return'food';
+ return'sight';
+}
+async function loadOSM(){
+ const a=`(around:${RADIUS_KM*1000},${C[1]},${C[0]})`;
+ const q=`[out:json][timeout:25];(nwr["tourism"~"attraction|viewpoint|museum|gallery|zoo|theme_park"]${a};nwr["amenity"~"restaurant|cafe|place_of_worship|marketplace"]${a};nwr["natural"~"beach|waterfall|peak"]${a};nwr["leisure"="park"]${a};nwr["historic"]${a};);out center 300;`;
+ try{
+  const j=await (await fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q)})).json();
+  j.elements.forEach(e=>{const t=e.tags||{},name=t['name:th']||t.name;if(!name)return;
+   const lat=e.lat||(e.center&&e.center.lat),lon=e.lon||(e.center&&e.center.lon);if(!lat)return;
+   places.push({name,lat,lon,cat:classify(t),note:t.description||''})});
+  say('a',`พบสถานที่รอบร้าน ${places.length} แห่ง ลองถามได้เลยครับ`);
+ }catch(e){say('a','โหลดข้อมูลจาก OpenStreetMap ไม่ได้ตอนนี้ ลองรีเฟรชอีกครั้งนะครับ')}
+ places.forEach(p=>p.d=km(C[1],C[0],p.lat,p.lon));places.sort((x,y)=>x.d-y.d);
+}
+const escT=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const log=document.getElementById('log');
+function say(w,html,pl){
+ const d=document.createElement('div');d.className='b '+w;if(w==='u')d.textContent=html;else d.innerHTML=html;
+ (pl||[]).forEach(p=>{const b=document.createElement('button');
+  b.textContent=`${CATS[p.cat].icon} ${p.name} · ${p.d.toFixed(1)} กม.`;
+  b.onclick=()=>{fly([p.lon,p.lat],16.5,55);new maplibregl.Popup({offset:28}).setLngLat([p.lon,p.lat]).setHTML(`<b>${escT(p.name)}</b>${p.note?'<br>'+escT(p.note):''}<br><a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}">นำทาง</a>`).addTo(map)};
+  d.appendChild(b)});
+ log.appendChild(d);log.scrollTop=log.scrollHeight;
+}
+function show(list){
+ markers.forEach(m=>m.remove());markers=[];
+ const bounds=new maplibregl.LngLatBounds(C,C);
+ list.forEach(p=>{const e=document.createElement('div');e.className='pin s';e.innerHTML='<i>'+CATS[p.cat].icon+'</i>';
+  markers.push(new maplibregl.Marker({element:e,anchor:'bottom'}).setLngLat([p.lon,p.lat]).addTo(map));bounds.extend([p.lon,p.lat])});
+ map.fitBounds(bounds,{padding:{top:80,bottom:80,left:window.innerWidth>700?420:40,right:60},pitch:45,duration:1400});
+}
+function ask(text){
+ say('u',text);
+ let hit=Object.keys(CATS).filter(k=>CATS[k].kw.some(w=>text.includes(w)));
+ if(!hit.length&&/เที่ยว|แนะนำ|ใกล้/.test(text))hit=['sight','view','temple'];
+ if(!hit.length){say('a','ลองถามเป็นหมวดนะครับ เช่น ที่กิน คาเฟ่ วัด วิวสวย หรือที่เที่ยวใกล้ร้าน');return}
+ const list=places.filter(p=>hit.includes(p.cat)).slice(0,5);
+ if(!list.length){say('a','ยังไม่พบสถานที่หมวดนั้นรอบร้านในข้อมูลที่มี');return}
+ show(list);say('a',`แนะนำ ${list.length} แห่งใกล้ Blue House Café เรียงตามระยะทาง กดชื่อเพื่อบินไปดูแบบ 3D`,list);
+}
+document.getElementById('f').onsubmit=e=>{e.preventDefault();const i=document.getElementById('q');if(i.value.trim())ask(i.value.trim());i.value=''};
+Object.values(CATS).forEach(c=>{const b=document.createElement('button');b.textContent=c.icon+' '+c.label;b.onclick=()=>ask(c.kw[0]);document.getElementById('chips').appendChild(b)});
+say('a','สวัสดีครับ ผมเป็นไกด์ของ Blue House Café กำลังโหลดสถานที่รอบบ้านนาเดิม…');
+loadOSM();
+addEventListener('pageshow',e=>{if(e.persisted)map.resize()});
+}
+</script>
+</body>
+</html>

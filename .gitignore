@@ -1,0 +1,14 @@
+# ความลับ — ห้ามเข้า git เด็ดขาด
+.env
+.env.*
+*.pem
+*.key
+# ไฟล์ต้นฉบับจากโดรนมีข้อมูลพิกัด/เทเลเมทรี (ใช้เฉพาะ media/ ที่ล้างข้อมูลแล้ว)
+DJI_*
+*.srt
+*.MOV
+# อื่น ๆ
+node_modules/
+.DS_Store
+.vercel/
+supabase/.temp/
