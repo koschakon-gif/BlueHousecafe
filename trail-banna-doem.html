@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&family=Prompt:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-:root{--h:calc(54px + env(safe-area-inset-top,0px));--ink:#111;--mute:#7a7a7a;--line:#e4e4e4;--soft:#f6f6f6;--blue:#1d5fd1}
+:root{--h:calc(54px + env(safe-area-inset-top,0px));--ink:#0058A3;--mute:#4f647d;--line:#d3deea;--soft:#f0f5fa;--blue:#0058A3}
 *{box-sizing:border-box}html,body{height:100%;margin:0}
 body{font-family:'Jost','Prompt',system-ui,sans-serif;font-weight:300;color:var(--ink);letter-spacing:.02em}
 #map{position:fixed;inset:var(--h) 0 0 0}
@@ -104,9 +104,9 @@ map.on('load',()=>{
  map.addLayer({id:'osm-rail',type:'line',source:'osm-lines',filter:['==',['get','kind'],'rail'],paint:{'line-color':'#444','line-width':2,'line-dasharray':[3,2]}});
  map.addLayer({id:'osm-path',type:'line',source:'osm-lines',filter:['==',['get','kind'],'path'],paint:{'line-color':'#999','line-width':1.5,'line-dasharray':[1,2]}});
  map.addLayer({id:'casing',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#fff','line-width':10}});
- map.addLayer({id:'route',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#1d5fd1','line-width':5}});
+ map.addLayer({id:'route',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#0058A3','line-width':5}});
  map.addLayer({id:'done',type:'line',source:'done',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#0b2a66','line-width':5}});
- map.addLayer({id:'verts',type:'circle',source:'verts',paint:{'circle-radius':3.5,'circle-color':'#fff','circle-stroke-color':'#1d5fd1','circle-stroke-width':2}});
+ map.addLayer({id:'verts',type:'circle',source:'verts',paint:{'circle-radius':3.5,'circle-color':'#fff','circle-stroke-color':'#0058A3','circle-stroke-width':2}});
  map.addLayer({id:'osm-pts',type:'circle',source:'osm-pts',paint:{'circle-radius':6,'circle-stroke-width':2,'circle-stroke-color':'#fff','circle-color':['match',['get','kind'],'market','#e8590c','school','#2b8a3e','bridge','#7048e8','#444']}});
  render();overview(true);if(EDIT)loadOSM();
 });
